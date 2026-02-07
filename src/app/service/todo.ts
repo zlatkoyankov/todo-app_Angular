@@ -1,13 +1,11 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 import { TodoItem } from '../models/todo.model';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TodoService {
-  private todos: TodoItem[] = [];
-  private todoSubject = new BehaviorSubject<TodoItem[]>([]);
+  private todos = signal<TodoItem[]>([]);
   private idCounter = 0;
 
   constructor() {
@@ -16,48 +14,45 @@ export class TodoService {
 
   private loadTodos(): void {
     const storeTodos = localStorage.getItem('todos');
-
     if (storeTodos) {
-      this.todos = JSON.parse(storeTodos);
+      this.todos.set(JSON.parse(storeTodos));
     }
-    this.todoSubject.next(this.todos);
   }
 
   private saveTodos(): void {
-    localStorage.setItem('todos', JSON.stringify(this.todos));
-    this.todoSubject.next(this.todos);
+    localStorage.setItem('todos', JSON.stringify(this.todos()));
   }
 
-
-  getTodos(): Observable<TodoItem[]> {
-    return this.todoSubject.asObservable();
+  getTodos() {
+    return this.todos.asReadonly();
   }
 
-  addTodo(text: string):void {
+  addTodo(text: string): void {
     const newTodo: TodoItem = {
       id: Date.now() + (this.idCounter++),
       text,
       completed: false
     };
-    this.todos.push(newTodo);
+    this.todos.update(todos => [...todos, newTodo]);
     this.saveTodos();
   }
 
   toggleTodo(id: number): void {
-    const todo = this.todos.find(t => t.id === id);
-    if (todo) {
-      todo.completed = !todo.completed;
-      this.saveTodos();
-    }
+    this.todos.update(todos =>
+      todos.map(todo =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
+    this.saveTodos();
   }
 
   deleteTodo(id: number): void {
-    this.todos = this.todos.filter(t => t.id !== id);
+    this.todos.update(todos => todos.filter(t => t.id !== id));
     this.saveTodos();
   }
 
   clearCompleted(): void {
-    this.todos = this.todos.filter(t => !t.completed);
+    this.todos.update(todos => todos.filter(t => !t.completed));
     this.saveTodos();
   }
 }

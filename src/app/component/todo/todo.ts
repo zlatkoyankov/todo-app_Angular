@@ -1,12 +1,11 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
-import { TodoItem } from '../../models/todo.model';
-import { Subscription } from 'rxjs';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { TodoService } from '../../service/todo';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-todo',
   imports: [FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<div class="max-w-2xl mx-auto p-4">
   <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Angular Todo App</h1>
   
@@ -14,7 +13,8 @@ import { FormsModule } from '@angular/forms';
   <div class="mb-6 flex">
     <input
       type="text"
-      [(ngModel)]="newTodoText"
+      [ngModel]="newTodoText()"
+      (ngModelChange)="newTodoText.set($event)"
       (keyup.enter)="addTodo()"
       placeholder="What needs to be done?"
       class="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -30,7 +30,7 @@ import { FormsModule } from '@angular/forms';
   <!-- Todo List -->
   <div class="bg-white rounded-lg shadow-md overflow-hidden">
     <ul class="divide-y divide-gray-200">
-      @for (todo of todos; track todo.id) {
+      @for (todo of todos(); track todo.id) {
         <li class="p-4 hover:bg-gray-50 transition duration-150">
           <div class="flex items-center">
             <input
@@ -63,7 +63,7 @@ import { FormsModule } from '@angular/forms';
     <!-- Todo Stats and Actions -->
     <div class="p-4 flex flex-col sm:flex-row justify-between items-center border-t border-gray-200">
       <div class="text-gray-600 mb-2 sm:mb-0">
-        {{ activeTodosCount }} {{ activeTodosCount === 1 ? 'item' : 'items' }} left
+        {{ activeTodosCount() }} {{ activeTodosCount() === 1 ? 'item' : 'items' }} left
       </div>
       <div class="flex space-x-2">
         <button
@@ -84,27 +84,20 @@ import { FormsModule } from '@angular/forms';
 </div>`,
   styles: []
 })
-export class TodoComponent implements OnInit, OnDestroy {
+export class TodoComponent {
+  private todoService = inject(TodoService);
 
-  todos: TodoItem[] = [];
-  newTodoText: string = '';
-  subscription: Subscription = new Subscription();
-  todoService: TodoService = inject(TodoService);
-
-  ngOnInit(): void {
-    this.subscription = this.todoService.getTodos().subscribe(todos => {
-      this.todos = todos;
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.subscription.unsubscribe();
-  }
+  todos = this.todoService.getTodos();
+  newTodoText = signal('');
+  activeTodosCount = computed(() =>
+    this.todos().filter(todo => !todo.completed).length
+  );
 
   addTodo(): void {
-    if (this.newTodoText.trim()) {
-      this.todoService.addTodo(this.newTodoText);
-      this.newTodoText = '';
+    const text = this.newTodoText().trim();
+    if (text) {
+      this.todoService.addTodo(text);
+      this.newTodoText.set('');
     }
   }
 
@@ -118,8 +111,5 @@ export class TodoComponent implements OnInit, OnDestroy {
 
   clearCompleted(): void {
     this.todoService.clearCompleted();
-  }
-  get activeTodosCount(): number {
-    return this.todos.filter(todo => !todo.completed).length;
   }
 }

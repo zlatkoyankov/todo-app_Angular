@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TodoComponent } from './todo';
 import { TodoService } from '../../service/todo';
 import { FormsModule } from '@angular/forms';
-import { TodoItem } from '../../models/todo.model';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('TodoComponent', () => {
@@ -31,49 +30,33 @@ describe('TodoComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('ngOnInit()', () => {
-    it('should load todos from service', async () => {
-      todoService.addTodo('Test todo');
-
-      component.ngOnInit();
-
-      await new Promise(resolve => setTimeout(resolve, 20));
-
-      expect(component.todos.length).toBe(1);
-      expect(component.todos[0].text).toBe('Test todo');
+  describe('Component Initialization', () => {
+    it('should initialize with empty todos signal', () => {
+      expect(component.todos()).toEqual([]);
     });
 
-    it('should subscribe to todos observable', async () => {
-      const mockTodos: TodoItem[] = [
-        { id: 1, text: 'Test 1', completed: false }
-      ];
+    it('should initialize with empty newTodoText signal', () => {
+      expect(component.newTodoText()).toBe('');
+    });
 
-      vi.spyOn(todoService, 'getTodos').mockReturnValue({
-        subscribe: (callback: (todos: TodoItem[]) => void) => {
-          callback(mockTodos);
-          return { unsubscribe: () => {} } as any;
-        }
-      } as any);
-
-      component.ngOnInit();
-
-      expect(component.todos).toEqual(mockTodos);
+    it('should have active todos count computed signal', () => {
+      expect(component.activeTodosCount()).toBe(0);
     });
   });
 
   describe('addTodo()', () => {
     it('should add a new todo when text is provided', () => {
-      component.newTodoText = 'New test todo';
+      component.newTodoText.set('New test todo');
       const spy = vi.spyOn(todoService, 'addTodo');
 
       component.addTodo();
 
       expect(spy).toHaveBeenCalledWith('New test todo');
-      expect(component.newTodoText).toBe('');
+      expect(component.newTodoText()).toBe('');
     });
 
     it('should not add todo if text is empty', () => {
-      component.newTodoText = '';
+      component.newTodoText.set('');
       const spy = vi.spyOn(todoService, 'addTodo');
 
       component.addTodo();
@@ -82,7 +65,7 @@ describe('TodoComponent', () => {
     });
 
     it('should not add todo if text is only whitespace', () => {
-      component.newTodoText = '   ';
+      component.newTodoText.set('   ');
       const spy = vi.spyOn(todoService, 'addTodo');
 
       component.addTodo();
@@ -91,21 +74,21 @@ describe('TodoComponent', () => {
     });
 
     it('should clear input field after adding todo', () => {
-      component.newTodoText = 'Todo to add';
+      component.newTodoText.set('Todo to add');
       vi.spyOn(todoService, 'addTodo');
 
       component.addTodo();
 
-      expect(component.newTodoText).toBe('');
+      expect(component.newTodoText()).toBe('');
     });
 
-    it('should preserve whitespace at beginning and end if text has content', () => {
-      component.newTodoText = '  Todo with spaces  ';
+    it('should trim whitespace before adding todo', () => {
+      component.newTodoText.set('  Todo with spaces  ');
       const spy = vi.spyOn(todoService, 'addTodo');
 
       component.addTodo();
 
-      expect(spy).toHaveBeenCalledWith('  Todo with spaces  ');
+      expect(spy).toHaveBeenCalledWith('Todo with spaces');
     });
   });
 
@@ -167,109 +150,122 @@ describe('TodoComponent', () => {
     });
   });
 
-  describe('activeTodosCount', () => {
-    it('should return count of incomplete todos', () => {
-      component.todos = [
-        { id: 1, text: 'Active 1', completed: false },
-        { id: 2, text: 'Completed', completed: true },
-        { id: 3, text: 'Active 2', completed: false }
-      ];
+  describe('activeTodosCount (computed signal)', () => {
+    it('should return 0 for empty todos', () => {
+      expect(component.activeTodosCount()).toBe(0);
+    });
 
-      expect(component.activeTodosCount).toBe(2);
+    it('should count only incomplete todos', () => {
+      todoService.addTodo('Active todo 1');
+      todoService.addTodo('Completed todo');
+      todoService.addTodo('Active todo 2');
+
+      const todos = component.todos();
+      if (todos.length >= 2) {
+        todoService.toggleTodo(todos[1].id);
+      }
+
+      expect(component.activeTodosCount()).toBe(2);
     });
 
     it('should return 0 when all todos are completed', () => {
-      component.todos = [
-        { id: 1, text: 'Completed 1', completed: true },
-        { id: 2, text: 'Completed 2', completed: true }
-      ];
+      todoService.addTodo('Todo 1');
+      todoService.addTodo('Todo 2');
 
-      expect(component.activeTodosCount).toBe(0);
+      const todos = component.todos();
+      todos.forEach(todo => {
+        todoService.toggleTodo(todo.id);
+      });
+
+      expect(component.activeTodosCount()).toBe(0);
     });
 
-    it('should return correct count when no todos exist', () => {
-      component.todos = [];
+    it('should update when todos are added', () => {
+      expect(component.activeTodosCount()).toBe(0);
 
-      expect(component.activeTodosCount).toBe(0);
+      todoService.addTodo('Todo 1');
+      expect(component.activeTodosCount()).toBe(1);
+
+      todoService.addTodo('Todo 2');
+      expect(component.activeTodosCount()).toBe(2);
     });
 
-    it('should return total count when no todos are completed', () => {
-      component.todos = [
-        { id: 1, text: 'Active 1', completed: false },
-        { id: 2, text: 'Active 2', completed: false },
-        { id: 3, text: 'Active 3', completed: false }
-      ];
+    it('should update when todos are toggled', () => {
+      todoService.addTodo('Todo 1');
+      todoService.addTodo('Todo 2');
 
-      expect(component.activeTodosCount).toBe(3);
+      expect(component.activeTodosCount()).toBe(2);
+
+      const todos = component.todos();
+      todoService.toggleTodo(todos[0].id);
+
+      expect(component.activeTodosCount()).toBe(1);
     });
-  });
 
-  describe('ngOnDestroy()', () => {
-    it('should unsubscribe from todos subscription', () => {
-      const spy = vi.spyOn(component.subscription, 'unsubscribe');
+    it('should update when todos are deleted', () => {
+      todoService.addTodo('Todo 1');
+      todoService.addTodo('Todo 2');
 
-      component.ngOnDestroy();
+      expect(component.activeTodosCount()).toBe(2);
 
-      expect(spy).toHaveBeenCalled();
+      const todos = component.todos();
+      todoService.deleteTodo(todos[0].id);
+
+      expect(component.activeTodosCount()).toBe(1);
     });
   });
 
   describe('Component Integration', () => {
-    it('should handle complete workflow: add, toggle, and delete todos', async () => {
-      component.ngOnInit();
-      await new Promise(resolve => setTimeout(resolve, 20));
-
-      // Add first todo
-      component.newTodoText = 'First todo';
+    it('should handle complete workflow: add, toggle, and delete todos', () => {
+      component.newTodoText.set('First todo');
       component.addTodo();
-      await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(component.todos.length).toBe(1);
-      const firstTodoId = component.todos[0].id;
+      expect(component.todos().length).toBe(1);
+      expect(component.activeTodosCount()).toBe(1);
+      const firstTodoId = component.todos()[0].id;
 
-      // Toggle the todo
       component.toggleTodo(firstTodoId);
-      await new Promise(resolve => setTimeout(resolve, 20));
+      expect(component.todos()[0].completed).toBe(true);
+      expect(component.activeTodosCount()).toBe(0);
 
-      expect(component.todos[0].completed).toBe(true);
-
-      // Add second todo
-      component.newTodoText = 'Second todo';
+      component.newTodoText.set('Second todo');
       component.addTodo();
-      await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(component.todos.length).toBe(2);
-      expect(component.activeTodosCount).toBe(1);
+      expect(component.todos().length).toBe(2);
+      expect(component.activeTodosCount()).toBe(1);
 
-      // Delete first todo
       component.deleteTodo(firstTodoId);
-      await new Promise(resolve => setTimeout(resolve, 20));
-
-      expect(component.todos.length).toBe(1);
-      expect(component.todos[0].text).toBe('Second todo');
+      expect(component.todos().length).toBe(1);
+      expect(component.todos()[0].text).toBe('Second todo');
+      expect(component.activeTodosCount()).toBe(1);
     });
 
-    it('should update active todos count when todos change', async () => {
-      component.ngOnInit();
-      await new Promise(resolve => setTimeout(resolve, 20));
-
-      component.newTodoText = 'Todo 1';
+    it('should sync with service state changes', () => {
+      component.newTodoText.set('Todo A');
       component.addTodo();
-      await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(component.activeTodosCount).toBe(1);
+      expect(component.todos().length).toBe(1);
+      expect(component.todos()[0].text).toBe('Todo A');
 
-      component.newTodoText = 'Todo 2';
+      const todoId = component.todos()[0].id;
+      component.toggleTodo(todoId);
+
+      expect(component.todos()[0].completed).toBe(true);
+
+      component.clearCompleted();
+      expect(component.todos().length).toBe(0);
+    });
+
+    it('should persist todos to localStorage', () => {
+      component.newTodoText.set('Persistent todo');
       component.addTodo();
-      await new Promise(resolve => setTimeout(resolve, 20));
 
-      expect(component.activeTodosCount).toBe(2);
-
-      const firstTodoId = component.todos[0].id;
-      component.toggleTodo(firstTodoId);
-      await new Promise(resolve => setTimeout(resolve, 20));
-
-      expect(component.activeTodosCount).toBe(1);
+      const stored = localStorage.getItem('todos');
+      expect(stored).toBeTruthy();
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        expect(parsed[0].text).toBe('Persistent todo');
+      }
     });
   });
 });
