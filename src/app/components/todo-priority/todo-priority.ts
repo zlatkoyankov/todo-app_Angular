@@ -10,7 +10,7 @@ import { PriorityLabel } from '../../models/priority.model';
 })
 export class TodoPriority {
   // selectedPriority is a signal-based input; use the enum string values or 'All'
-  selectedPriority = input<string>('All');
+  selectedPriority = input<string[]>([]);
   prioritySelected = output<string>();
 
   priorities = [

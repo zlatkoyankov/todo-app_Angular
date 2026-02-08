@@ -1,20 +1,20 @@
-<div class="bg-white rounded-lg shadow-md p-4 mb-6">
-  <h3 class="text-lg font-semibold mb-3 text-gray-800">Categories</h3>
+<div>
+  <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
   <div class="flex flex-wrap gap-2">
     <button
-      (click)="selectCategory('all')"
-      [class]="selectedCategory() === 'all' ? 'bg-blue-500 text-white' : ''"
-      class="px-3 py-1 rounded-full text-sm font-medium transition duration-200 bg-gray-100 hover:bg-gray-200"
-      aria-pressed="{{ selectedCategory() === 'all' }}"
+      (click)="selectCategory('All')"
+      [class]="selectedCategory().length === 0 ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'"
+      class="px-3 py-1 rounded-full text-sm font-medium transition duration-200"
+      aria-pressed="{{ selectedCategory().length === 0 }}"
     >
       All
     </button>
     @for (category of categories(); track category.id) {
       <button
-        (click)="selectCategory(category.id)"
-        [class]="isCategorySelected(category.id) ? 'bg-blue-500 text-white' : ''"
-        class="px-3 py-1 rounded-full text-sm font-medium transition duration-200 bg-gray-100 hover:bg-gray-200"
-        [attr.aria-pressed]="isCategorySelected(category.id)"
+        (click)="selectCategory(category.name)"
+        [class]="isCategorySelected(category.name) ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'"
+        class="px-3 py-1 rounded-full text-sm font-medium transition duration-200"
+        [attr.aria-pressed]="isCategorySelected(category.name)"
       >
         {{ category.name }}
       </button>

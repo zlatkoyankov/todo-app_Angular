@@ -21,9 +21,10 @@ export class TodoComponent {
   todos = this.todoService.getTodos();
   filteredTodos = signal<ReturnType<typeof this.todos>>([]);
   searchTerm = signal('');
-  selectedCategory = signal('All');
-  selectedPriority = signal('All');
+  selectedCategory = signal<string[]>([]);
+  selectedPriority = signal<string[]>([]);
   editingTodoId = signal<number | null>(null);
+  showFormDialog = signal(false);
   editingTodo = computed(() => {
     const id = this.editingTodoId();
     return id ? this.todos().find(t => t.id === id) || null : null;
@@ -65,14 +66,14 @@ export class TodoComponent {
   applyFilters() {
     let filtered = [...this.todos()];
 
-    // Apply category filter
-    if (this.selectedCategory() !== 'All') {
-      filtered = filtered.filter(todo => String(todo.category) === this.selectedCategory());
+    // Apply category filter (multi-select). Empty array means 'All'.
+    if (this.selectedCategory().length > 0) {
+      filtered = filtered.filter(todo => this.selectedCategory().includes(String(todo.category)));
     }
 
-    // Apply priority filter
-    if (this.selectedPriority() !== 'All') {
-      filtered = filtered.filter(todo => String(todo.priority.value) === this.selectedPriority());
+    // Apply priority filter (multi-select). Empty array means 'All'.
+    if (this.selectedPriority().length > 0) {
+      filtered = filtered.filter(todo => this.selectedPriority().includes(String(todo.priority.value)));
     }
 
     // Apply search filter
@@ -95,7 +96,7 @@ export class TodoComponent {
   }
 
   cancelEdit(): void {
-    this.editingTodoId.set(null);
+    this.closeFormDialog();
   }
 
   toggleTodo(id: number): void {
@@ -110,13 +111,39 @@ export class TodoComponent {
     this.todoService.clearCompleted();
   }
 
-  onCategorySelected(categoryId: string): void {
-    this.selectedCategory.set(categoryId);
+  onCategorySelected(categoryName: string): void {
+    if (categoryName === 'All') {
+      this.selectedCategory.set([]);
+      this.applyFilters();
+      return;
+    }
+
+    const current = [...this.selectedCategory()];
+    const idx = current.indexOf(categoryName);
+    if (idx >= 0) {
+      current.splice(idx, 1);
+    } else {
+      current.push(categoryName);
+    }
+    this.selectedCategory.set(current);
     this.applyFilters();
   }
 
   onPrioritySelected(priority: string): void {
-    this.selectedPriority.set(priority);
+    if (priority === 'All') {
+      this.selectedPriority.set([]);
+      this.applyFilters();
+      return;
+    }
+
+    const current = [...this.selectedPriority()];
+    const idx = current.indexOf(priority);
+    if (idx >= 0) {
+      current.splice(idx, 1);
+    } else {
+      current.push(priority);
+    }
+    this.selectedPriority.set(current);
     this.applyFilters();
   }
 
@@ -124,8 +151,24 @@ export class TodoComponent {
     this.searchTerm.set(term);
   }
 
+  onFormSubmitted(): void {
+    this.applyFilters();
+    this.closeFormDialog();
+  }
+
   editTodo(todo: TodoItem): void {
     this.editingTodoId.set(todo.id);
+    this.showFormDialog.set(true);
+  }
+
+  openAddTodoDialog(): void {
+    this.editingTodoId.set(null);
+    this.showFormDialog.set(true);
+  }
+
+  closeFormDialog(): void {
+    this.showFormDialog.set(false);
+    this.editingTodoId.set(null);
   }
 
   trackByTodoId(index: number, todo: TodoItem): number {

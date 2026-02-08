@@ -2,6 +2,7 @@ import { Injectable, signal } from '@angular/core';
 import { TodoItem } from '../models/todo.model';
 import { Category } from '../models/category.model';
 import { Priority, PriorityLabel } from '../models/priority.model';
+import { DUMMY_TODOS } from './dummy-todos';
 
 @Injectable({
   providedIn: 'root',
@@ -49,27 +50,14 @@ export class TodoService {
       }));
       this.todos.set(validTodos);
     } else {
-      // Initialize with some default todos if needed
-      this.todos.set([
-        {
-          id: Date.now(),
-          text: 'Sample Todo Item',
-          completed: false,
-          category: this.categories[1].name,
-          priority: this.prioorities[0],
-          createdAt: new Date(),
-          tags: []
-        },
-        {
-          id: Date.now() + 1,
-          text: 'Another Sample Todo',
-          completed: true,
-          category: this.categories[2].name,
-          priority: this.prioorities[1],
-          createdAt: new Date(),
-          tags: []
-        }
-      ]);
+      // Initialize with dummy data for testing/development
+      // To remove dummy data: simply delete/comment out the DUMMY_TODOS import and use an empty array
+      const dummyTodos: TodoItem[] = DUMMY_TODOS.map((dummy, index) => ({
+        ...dummy,
+        id: Date.now() + index,
+        createdAt: new Date()
+      }));
+      this.todos.set(dummyTodos);
     }
   }
 

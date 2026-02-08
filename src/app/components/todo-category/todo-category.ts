@@ -10,7 +10,7 @@ import { TodoService } from '../../service/todo';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TodoCategory {
-  selectedCategory = input<string>('All');
+  selectedCategory = input<string[]>([]);
   categorySelected = output<string>();
 
   categories = signal<Category[]>([]);
@@ -22,12 +22,12 @@ export class TodoCategory {
       this.categories.set(this.todoService.getCategories()());
     });
   }
-
-  selectCategory(categoryId: string | number) {
-    this.categorySelected.emit(String(categoryId));
+  // Emit the category name so it matches the `category` value stored on todos
+  selectCategory(categoryName: string) {
+    this.categorySelected.emit(categoryName);
   }
 
-  isCategorySelected(categoryId: number): boolean {
-    return this.selectedCategory() === String(categoryId);
+  isCategorySelected(categoryName: string): boolean {
+    return this.selectedCategory().includes(categoryName);
   }
 }
