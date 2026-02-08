@@ -5,8 +5,32 @@ import { TodoService } from '../../service/todo';
 @Component({
   selector: 'app-todo-category',
   imports: [],
-  templateUrl: './todo-category.html',
-  styleUrl: './todo-category.scss',
+  styles: [],
+  template: `
+<div>
+  <label class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+  <div class="flex flex-wrap gap-2">
+    <button
+      (click)="selectCategory('All')"
+      [class]="selectedCategory().length === 0 ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'"
+      class="px-3 py-1 rounded-full text-sm font-medium transition duration-200"
+      aria-pressed="{{ selectedCategory().length === 0 }}"
+    >
+      All
+    </button>
+    @for (category of categories(); track category.id) {
+      <button
+        (click)="selectCategory(category.name)"
+        [class]="isCategorySelected(category.name) ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'"
+        class="px-3 py-1 rounded-full text-sm font-medium transition duration-200"
+        [attr.aria-pressed]="isCategorySelected(category.name)"
+      >
+        {{ category.name }}
+      </button>
+    }
+  </div>
+</div>
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TodoCategory {

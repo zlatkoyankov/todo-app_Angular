@@ -9,7 +9,108 @@ import { Priority } from '../../models/priority.model';
   selector: 'app-todo-form',
   imports: [ReactiveFormsModule],
   templateUrl: './todo-form.html',
-  styleUrl: './todo-form.scss',
+  styles: [],
+  template: `
+<div class="space-y-4">
+  @if (isEditing) {
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Edit Todo</h2>
+  } @else {
+    <h2 class="text-xl font-bold mb-4 text-gray-800">Add New Todo</h2>
+  }
+
+  <form [formGroup]="form" (ngSubmit)="onSubmit()" role="form" aria-label="Todo form" class="space-y-4">
+    <div>
+      <label for="todo-text" class="block text-sm font-medium text-gray-700 mb-1">Task</label>
+      <input
+        id="todo-text"
+        formControlName="text"
+        type="text"
+        placeholder="What needs to be done?"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        aria-required="true"
+      >
+      @if (form.get('text')?.hasError('required')) {
+        <span class="text-red-500 text-sm">Task is required</span>
+      }
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="category-select" class="block text-sm font-medium text-gray-700 mb-1">Category</label>
+        <select
+          id="category-select"
+          formControlName="category"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Category"
+        >
+          @for (cat of category(); track cat.id) {
+            <option [value]="cat.name">{{ cat.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div>
+        <label for="priority-select" class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+        <select
+          id="priority-select"
+          formControlName="priority"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Priority"
+        >
+          @for (p of priority(); track p.value) {
+            <option [value]="p.value">{{ p.label }}</option>
+          }
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label for="due-date" class="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
+        <input
+          id="due-date"
+          formControlName="dueDate"
+          type="date"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Due date"
+        >
+      </div>
+
+      <div>
+        <label for="tags-input" class="block text-sm font-medium text-gray-700 mb-1">Tags (comma separated)</label>
+        <input
+          id="tags-input"
+          formControlName="tags"
+          type="text"
+          placeholder="angular, portfolio, project"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Tags"
+        >
+      </div>
+    </div>
+
+    <div class="flex space-x-3 pt-2">
+      <button
+        type="submit"
+        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md font-medium transition duration-200 disabled:opacity-50"
+        aria-label="Submit todo"
+        [disabled]="form.invalid"
+      >
+        @if (isEditing) { Update } @else { Add } Todo
+      </button>
+
+      <button
+        type="button"
+        (click)="onCancel()"
+        class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-md font-medium transition duration-200"
+        aria-label="Cancel"
+      >
+        Cancel
+      </button>
+    </div>
+  </form>
+</div>
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TodoForm implements OnInit {

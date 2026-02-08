@@ -4,8 +4,32 @@ import { PriorityLabel } from '../../models/priority.model';
 @Component({
   selector: 'app-todo-priority',
   imports: [],
-  templateUrl: './todo-priority.html',
-  styleUrl: './todo-priority.scss',
+  styles: [],
+  template: `
+<div>
+  <label class="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+  <div class="flex flex-wrap gap-2">
+    <button
+      (click)="selectPriority('All')"
+      [class]="selectedPriority().length === 0 ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'"
+      class="px-3 py-1 rounded-full text-sm font-medium transition duration-200"
+      [attr.aria-pressed]="selectedPriority().length === 0"
+    >
+      All
+    </button>
+    @for (priority of priorities; track priority.value) {
+      <button
+        (click)="selectPriority(priority.value)"
+        [class]="selectedPriority().includes(priority.value) ? 'bg-blue-500 text-white' : 'bg-gray-100 hover:bg-gray-200'"
+        class="px-3 py-1 rounded-full text-sm font-medium transition duration-200"
+        [attr.aria-pressed]="selectedPriority().includes(priority.value)"
+      >
+        {{ priority.label }}
+      </button>
+    }
+  </div>
+</div>
+  `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TodoPriority {

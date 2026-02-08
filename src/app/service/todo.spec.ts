@@ -5,6 +5,7 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('TodoService', () => {
   let service: TodoService;
+  const make = (text: string) => ({ text, completed: false, category: 'Work', priority: service.getPriorities()()[1] || service.getPriorities()()[0], tags: [] });
 
   beforeEach(() => {
     // Clear localStorage before each test to ensure isolation
@@ -42,8 +43,8 @@ describe('TodoService', () => {
 
     it('should load todos from localStorage on initialization', () => {
       const mockTodos: TodoItem[] = [
-        { id: 1, text: 'Test todo 1', completed: false },
-        { id: 2, text: 'Test todo 2', completed: true }
+        { id: 1, text: 'Test todo 1', completed: false, category: 'Work', priority: { value: ("Medium" as any), label: 'Medium', coloer: '' }, createdAt: new Date(), tags: [] },
+        { id: 2, text: 'Test todo 2', completed: true, category: 'Work', priority: { value: ("Medium" as any), label: 'Medium', coloer: '' }, createdAt: new Date(), tags: [] }
       ];
       localStorage.setItem('todos', JSON.stringify(mockTodos));
 
@@ -57,7 +58,7 @@ describe('TodoService', () => {
 
   describe('addTodo()', () => {
     it('should add a new todo', () => {
-      service.addTodo('New test todo');
+      service.addTodo(make('New test todo'));
 
       const todos = service.getTodos();
       expect(todos().length).toBe(1);
@@ -67,15 +68,15 @@ describe('TodoService', () => {
     });
 
     it('should assign unique id to each todo', () => {
-      service.addTodo('Todo 1');
-      service.addTodo('Todo 2');
+      service.addTodo(make('Todo 1'));
+      service.addTodo(make('Todo 2'));
 
       const todos = service.getTodos();
       expect(todos()[0].id).not.toBe(todos()[1].id);
     });
 
     it('should persist todos to localStorage', () => {
-      service.addTodo('Persistent todo');
+      service.addTodo(make('Persistent todo'));
 
       const storedTodos = localStorage.getItem('todos');
       expect(storedTodos).toBeTruthy();
@@ -88,7 +89,7 @@ describe('TodoService', () => {
 
   describe('toggleTodo()', () => {
     it('should toggle completed status of a todo', () => {
-      service.addTodo('Toggle me');
+      service.addTodo(make('Toggle me'));
 
       const initial = service.getTodos();
       const todoId = initial()[0].id;
@@ -100,7 +101,7 @@ describe('TodoService', () => {
     });
 
     it('should toggle back to false when toggled again', () => {
-      service.addTodo('Toggle twice');
+      service.addTodo(make('Toggle twice'));
 
       const initial = service.getTodos();
       const todoId = initial()[0].id;
@@ -112,7 +113,7 @@ describe('TodoService', () => {
     });
 
     it('should do nothing for non-existent todo id', () => {
-      service.addTodo('Test todo');
+      service.addTodo(make('Test todo'));
 
       service.toggleTodo(99999);
       const todos = service.getTodos();
@@ -121,7 +122,7 @@ describe('TodoService', () => {
     });
 
     it('should persist toggle state to localStorage', () => {
-      service.addTodo('Persist toggle');
+      service.addTodo(make('Persist toggle'));
 
       const initial = service.getTodos();
       const todoId = initial()[0].id;
@@ -138,7 +139,7 @@ describe('TodoService', () => {
 
   describe('deleteTodo()', () => {
     it('should delete a todo by id', () => {
-      service.addTodo('Delete me');
+      service.addTodo(make('Delete me'));
 
       const initial = service.getTodos();
       const todoId = initial()[0].id;
@@ -148,9 +149,9 @@ describe('TodoService', () => {
     });
 
     it('should not affect other todos when deleting', () => {
-      service.addTodo('Keep me 1');
-      service.addTodo('Delete me');
-      service.addTodo('Keep me 2');
+      service.addTodo(make('Keep me 1'));
+      service.addTodo(make('Delete me'));
+      service.addTodo(make('Keep me 2'));
 
       const current = service.getTodos();
       const todoIdToDelete = current()[1].id;
@@ -161,7 +162,7 @@ describe('TodoService', () => {
     });
 
     it('should do nothing for non-existent todo id', () => {
-      service.addTodo('Test todo');
+      service.addTodo(make('Test todo'));
 
       service.deleteTodo(99999);
 
@@ -170,7 +171,7 @@ describe('TodoService', () => {
     });
 
     it('should persist deletion to localStorage', () => {
-      service.addTodo('Delete and persist');
+      service.addTodo(make('Delete and persist'));
 
       const initial = service.getTodos();
       const todoId = initial()[0].id;
@@ -182,9 +183,9 @@ describe('TodoService', () => {
 
   describe('clearCompleted()', () => {
     it('should remove all completed todos', () => {
-      service.addTodo('Completed 1');
-      service.addTodo('Active');
-      service.addTodo('Completed 2');
+      service.addTodo(make('Completed 1'));
+      service.addTodo(make('Active'));
+      service.addTodo(make('Completed 2'));
 
       const current = service.getTodos();
       const completed1Id = current()[0].id;
@@ -198,8 +199,8 @@ describe('TodoService', () => {
     });
 
     it('should not affect active todos', () => {
-      service.addTodo('Active 1');
-      service.addTodo('Active 2');
+      service.addTodo(make('Active 1'));
+      service.addTodo(make('Active 2'));
 
       service.clearCompleted();
       const todos = service.getTodos();
@@ -207,7 +208,7 @@ describe('TodoService', () => {
     });
 
     it('should do nothing when there are no completed todos', () => {
-      service.addTodo('Not completed');
+      service.addTodo(make('Not completed'));
 
       const initialLength = 1;
       service.clearCompleted();
@@ -216,7 +217,7 @@ describe('TodoService', () => {
     });
 
     it('should persist cleared state to localStorage', () => {
-      service.addTodo('Will be cleared');
+      service.addTodo(make('Will be cleared'));
 
       const current = service.getTodos();
       const todoId = current()[0].id;

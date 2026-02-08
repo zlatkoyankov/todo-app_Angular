@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { App } from './app';
-import { TodoComponent } from './component/todo/todo';
+import { TodoComponent } from './components/todo/todo';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('App Component', () => {

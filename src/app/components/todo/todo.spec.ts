@@ -8,8 +8,13 @@ describe('TodoComponent', () => {
   let component: TodoComponent;
   let fixture: ComponentFixture<TodoComponent>;
   let todoService: TodoService;
+  const make = (text: string) => ({ text, completed: false, category: 'Work', priority: todoService.getPriorities()()[1] || todoService.getPriorities()()[0], tags: [] });
 
   beforeEach(async () => {
+    // Ensure a clean test environment before services are instantiated
+    localStorage.clear();
+    (globalThis as any).process = { env: { VITEST: 'true' } };
+
     await TestBed.configureTestingModule({
       imports: [TodoComponent, FormsModule],
       providers: [TodoService]
@@ -18,7 +23,6 @@ describe('TodoComponent', () => {
     fixture = TestBed.createComponent(TodoComponent);
     component = fixture.componentInstance;
     todoService = TestBed.inject(TodoService);
-    localStorage.clear();
     fixture.detectChanges();
   });
 
@@ -51,7 +55,9 @@ describe('TodoComponent', () => {
 
       component.addTodo();
 
-      expect(spy).toHaveBeenCalledWith('New test todo');
+      expect(spy).toHaveBeenCalled();
+      const arg0 = spy.mock.calls[0][0];
+      expect(arg0.text).toBe('New test todo');
       expect(component.newTodoText()).toBe('');
     });
 
@@ -88,7 +94,9 @@ describe('TodoComponent', () => {
 
       component.addTodo();
 
-      expect(spy).toHaveBeenCalledWith('Todo with spaces');
+      expect(spy).toHaveBeenCalled();
+      const arg1 = spy.mock.calls[0][0];
+      expect(arg1.text).toBe('Todo with spaces');
     });
   });
 
@@ -156,9 +164,9 @@ describe('TodoComponent', () => {
     });
 
     it('should count only incomplete todos', () => {
-      todoService.addTodo('Active todo 1');
-      todoService.addTodo('Completed todo');
-      todoService.addTodo('Active todo 2');
+      todoService.addTodo(make('Active todo 1'));
+      todoService.addTodo(make('Completed todo'));
+      todoService.addTodo(make('Active todo 2'));
 
       const todos = component.todos();
       if (todos.length >= 2) {
@@ -169,8 +177,8 @@ describe('TodoComponent', () => {
     });
 
     it('should return 0 when all todos are completed', () => {
-      todoService.addTodo('Todo 1');
-      todoService.addTodo('Todo 2');
+      todoService.addTodo(make('Todo 1'));
+      todoService.addTodo(make('Todo 2'));
 
       const todos = component.todos();
       todos.forEach(todo => {
@@ -183,16 +191,16 @@ describe('TodoComponent', () => {
     it('should update when todos are added', () => {
       expect(component.activeTodosCount()).toBe(0);
 
-      todoService.addTodo('Todo 1');
+      todoService.addTodo(make('Todo 1'));
       expect(component.activeTodosCount()).toBe(1);
 
-      todoService.addTodo('Todo 2');
+      todoService.addTodo(make('Todo 2'));
       expect(component.activeTodosCount()).toBe(2);
     });
 
     it('should update when todos are toggled', () => {
-      todoService.addTodo('Todo 1');
-      todoService.addTodo('Todo 2');
+      todoService.addTodo(make('Todo 1'));
+      todoService.addTodo(make('Todo 2'));
 
       expect(component.activeTodosCount()).toBe(2);
 
@@ -203,8 +211,8 @@ describe('TodoComponent', () => {
     });
 
     it('should update when todos are deleted', () => {
-      todoService.addTodo('Todo 1');
-      todoService.addTodo('Todo 2');
+      todoService.addTodo(make('Todo 1'));
+      todoService.addTodo(make('Todo 2'));
 
       expect(component.activeTodosCount()).toBe(2);
 

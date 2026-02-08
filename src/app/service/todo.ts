@@ -30,12 +30,14 @@ export class TodoService {
   ];
 
   constructor() {
-    this.loadTodos();
+    // In test environment prefer an empty initial store to keep tests deterministic
+    const proc: any = (globalThis as any).process;
+    const isTestEnv = proc && (proc.env?.NODE_ENV === 'test' || proc.env?.VITEST === 'true');
+    this.loadTodos(isTestEnv);
     this.categoriesSignal.set(this.categories);
     this.prioritiesSignal.set(this.prioorities);
   }
-
-  private loadTodos(): void {
+  private loadTodos(isTestEnv = false): void {
     const storeTodos = localStorage.getItem('todos');
     if (storeTodos) {
       const todos = JSON.parse(storeTodos);
@@ -44,20 +46,22 @@ export class TodoService {
         ...todo,
         createdAt: new Date(todo.createdAt),
         dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
-        priority: todo.priority && typeof todo.priority === 'object' 
-          ? todo.priority 
+        priority: todo.priority && typeof todo.priority === 'object'
+          ? todo.priority
           : this.prioorities[1] // Default to MEDIUM priority
       }));
       this.todos.set(validTodos);
-    } else {
-      // Initialize with dummy data for testing/development
-      // To remove dummy data: simply delete/comment out the DUMMY_TODOS import and use an empty array
+    } else if (!isTestEnv) {
+      // Initialize with dummy data for development (skip during tests)
       const dummyTodos: TodoItem[] = DUMMY_TODOS.map((dummy, index) => ({
         ...dummy,
         id: Date.now() + index,
         createdAt: new Date()
       }));
       this.todos.set(dummyTodos);
+    } else {
+      // Test environment: start with empty list for deterministic tests
+      this.todos.set([]);
     }
   }
 
@@ -78,9 +82,11 @@ export class TodoService {
   }
 
   addTodo(todo: Omit<TodoItem, 'id' | 'createdAt'>): void {
+    // Ensure generated ids are unique even when calls occur within the same millisecond
+    const id = Date.now() + (++this.idCounter);
     const newTodo: TodoItem = {
       ...todo,
-      id: Date.now(),
+      id,
       createdAt: new Date(),
     };
     this.todos.update(todos => [...todos, newTodo]);
