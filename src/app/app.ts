@@ -1,5 +1,5 @@
 import { Component, signal } from '@angular/core';
-import { TodoComponent } from './component/todo/todo';
+import { TodoComponent } from './components/todo/todo';
 
 
 @Component({
