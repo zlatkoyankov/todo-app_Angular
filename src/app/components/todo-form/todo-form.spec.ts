@@ -5,30 +5,22 @@ import { TodoForm } from './todo-form';
 import { TodoService } from '../../service/todo';
 import { TodoItem } from '../../models/todo.model';
 import { Priority, PriorityLabel } from '../../models/priority.model';
-import { ComponentRef } from '@angular/core';
 
 describe('TodoForm', () => {
   let component: TodoForm;
-  let componentRef: ComponentRef<TodoForm>;
   let fixture: ComponentFixture<TodoForm>;
   let todoService: TodoService;
 
-  const mockPriorities: Priority[] = [
-    { value: PriorityLabel.LOW, label: 'Low', coloer: 'green' },
-    { value: PriorityLabel.MEDIUM, label: 'Medium', coloer: 'yellow' },
-    { value: PriorityLabel.HIGH, label: 'High', coloer: 'red' }
-  ];
-
-  const mockTodo: TodoItem = {
+  const createMockTodo = (): TodoItem => ({
     id: 1,
     text: 'Test todo',
     completed: false,
     category: 'Work',
-    priority: mockPriorities[1],
+    priority: { value: PriorityLabel.MEDIUM, label: 'Medium', coloer: 'yellow' },
     createdAt: new Date(),
     tags: ['angular', 'test'],
     dueDate: new Date('2026-03-01')
-  };
+  });
 
   beforeEach(async () => {
     localStorage.clear();
@@ -41,7 +33,6 @@ describe('TodoForm', () => {
 
     fixture = TestBed.createComponent(TodoForm);
     component = fixture.componentInstance;
-    componentRef = fixture.componentRef;
     todoService = TestBed.inject(TodoService);
     fixture.detectChanges();
   });
@@ -212,90 +203,44 @@ describe('TodoForm', () => {
   });
 
   describe('Edit Todo Mode', () => {
-    const setupEditMode = () => {
-      // Manually simulate what ngOnInit does when editingTodo is set
+    const applyEditState = (todo: TodoItem) => {
       component.isEditing = true;
+      (component as { editingTodo: () => TodoItem | null }).editingTodo = () => todo;
       component.form.patchValue({
-        text: mockTodo.text,
-        category: mockTodo.category,
-        priority: mockTodo.priority.value,
-        dueDate: mockTodo.dueDate ? mockTodo.dueDate.toISOString().split('T')[0] : '',
-        tags: mockTodo.tags.join(', ')
+        text: todo.text,
+        category: todo.category,
+        priority: todo.priority.value,
+        dueDate: todo.dueDate ? todo.dueDate.toISOString().split('T')[0] : '',
+        tags: todo.tags.join(', ')
       });
       component.form.get('text')?.disable();
     };
 
-    it('should populate form with existing todo data when ngOnInit detects editingTodo', () => {
-      setupEditMode();
-      expect(component.form.get('category')?.value).toBe('Work');
-      expect(component.form.get('priority')?.value).toBe('Medium');
-      expect(component.form.get('tags')?.value).toBe('angular, test');
-    });
-
-    it('should set isEditing to true when editing', () => {
-      setupEditMode();
-      expect(component.isEditing).toBe(true);
-    });
-
-    it('should disable text field when editing', () => {
-      setupEditMode();
-      expect(component.form.get('text')?.disabled).toBe(true);
-    });
-
     it('should call todoService.updateTodo when submitting in edit mode', () => {
-      // Add the todo first so it exists in the service
-      todoService.addTodo({
-        text: 'Test todo',
-        completed: false,
-        category: 'Work',
-        priority: todoService.getPriorities()()[1],
-        tags: ['angular', 'test']
-      });
-      const existingTodo = todoService.getTodos()()[0];
-
-      // Simulate edit mode with the actual todo
-      component.isEditing = true;
-      component.form.patchValue({
-        text: existingTodo.text,
-        category: existingTodo.category,
-        priority: existingTodo.priority.value,
-        tags: existingTodo.tags.join(', ')
-      });
-
-      // Mock editingTodo to return the existing todo
-      (component as any).editingTodo = () => existingTodo;
+      const existingTodo = createMockTodo();
+      applyEditState(existingTodo);
 
       const spy = vi.spyOn(todoService, 'updateTodo');
 
       component.form.patchValue({
         category: 'Personal',
-        priority: 'High'
+        priority: 'High',
+        tags: 'alpha, beta'
       });
 
       component.onSubmit();
 
       expect(spy).toHaveBeenCalledWith(existingTodo.id, expect.objectContaining({
-        category: 'Personal'
+        category: 'Personal',
+        tags: ['alpha', 'beta']
       }));
     });
 
     it('should emit todoUpdated event after updating', () => {
-      // Add the todo first
-      todoService.addTodo({
-        text: 'Test todo',
-        completed: false,
-        category: 'Work',
-        priority: todoService.getPriorities()()[1],
-        tags: []
-      });
-      const existingTodo = todoService.getTodos()()[0];
+      const existingTodo = createMockTodo();
+      applyEditState(existingTodo);
 
-      component.isEditing = true;
-      (component as any).editingTodo = () => existingTodo;
-
-      // Set valid form values (text is required)
       component.form.patchValue({
-        text: existingTodo.text,
         category: 'Work',
         priority: 'Medium'
       });

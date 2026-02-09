@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, OnInit, Signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, Signal, effect } from '@angular/core';
 import { ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
 import { TodoItem } from '../../models/todo.model';
 import { TodoService } from '../../service/todo';
@@ -7,11 +7,10 @@ import { Priority } from '../../models/priority.model';
 
 @Component({
   selector: 'app-todo-form',
+  standalone: true,
   imports: [ReactiveFormsModule],
-  templateUrl: './todo-form.html',
-  styles: [],
   template: `
-<div class="space-y-4">
+  <div class="space-y-4">
   @if (isEditing) {
     <h2 class="text-xl font-bold mb-4 text-gray-800">Edit Todo</h2>
   } @else {
@@ -109,18 +108,23 @@ import { Priority } from '../../models/priority.model';
       </button>
     </div>
   </form>
-</div>
-  `,
+</div>`,
+  styles: [],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class TodoForm implements OnInit {
-  editingTodo = input<TodoItem | null>(null);
+export class TodoForm {
+  readonly editingTodo = input<TodoItem | null>(null);
   todoAdded = output<void>();
   todoUpdated = output<void>();
   cancelEdit = output<void>();
 
   form = new FormGroup({
-    text: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.minLength(1)] }),
+    text: new FormControl('', { nonNullable: true, validators: [
+      Validators.required,
+      Validators.minLength(1),
+      Validators.pattern(/\S/) // Ensure not just whitespace
+    ] 
+    }),
     category: new FormControl('Work', { nonNullable: true }),
     priority: new FormControl('Medium', { nonNullable: true }),
     dueDate: new FormControl('', { nonNullable: true }),
@@ -138,11 +142,16 @@ export class TodoForm implements OnInit {
     // The service exposes signals; bind them directly instead of subscribing
     this.category = this.todoService.getCategories();
     this.priority = this.todoService.getPriorities();
-  }
 
-  ngOnInit() {
-    const todo = this.editingTodo();
-    if (todo) {
+    effect(() => {
+      const todo = this.editingTodo();
+      console.log('Editing todo:', todo);
+      if (!todo) {
+          this.isEditing = false;
+          this.form.get('text')?.enable();
+          return;
+        }
+
       this.isEditing = true;
       this.form.patchValue({
         text: todo.text,
@@ -152,8 +161,9 @@ export class TodoForm implements OnInit {
         tags: todo.tags.join(', ')
       });
       this.form.get('text')?.disable();
-    }
-  }
+
+    });
+  } 
 
   onSubmit() {
     if (this.form.invalid) {
