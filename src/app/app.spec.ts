@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { App } from './app';
 import { TodoComponent } from './components/todo/todo';
+import { TodoCategory } from './components/todo-category/todo-category';
+import { TodoPriority } from './components/todo-priority/todo-priority';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('App Component', () => {
@@ -9,7 +11,7 @@ describe('App Component', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App, TodoComponent]
+      imports: [App, TodoComponent, TodoCategory, TodoPriority]
     }).compileComponents();
 
     fixture = TestBed.createComponent(App);
