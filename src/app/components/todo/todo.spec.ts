@@ -112,7 +112,7 @@ describe('TodoComponent', () => {
       expect(spy).toHaveBeenCalled();
       const arg = spy.mock.calls[0][0];
       expect(arg.category).toBe('Work');
-      expect(arg.priority).toEqual({ value: 'Medium', label: 'Medium', coloer: '' });
+      expect(arg.priority).toEqual({ value: 'Medium', label: 'Medium', color: '' });
     });
   });
 
@@ -320,7 +320,7 @@ describe('TodoComponent', () => {
 
     it('should return a priority color for known priorities', () => {
       const priority = todoService.getPriorities()()[0];
-      expect(component.getPriorityColor(priority.value)).toBe(priority.coloer);
+      expect(component.getPriorityColor(priority.value)).toBe(priority.color);
     });
 
     it('should return empty string when priority is undefined', () => {

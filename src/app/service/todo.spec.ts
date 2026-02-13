@@ -43,8 +43,8 @@ describe('TodoService', () => {
 
     it('should load todos from localStorage on initialization', () => {
       const mockTodos: TodoItem[] = [
-        { id: 1, text: 'Test todo 1', completed: false, category: 'Work', priority: { value: ("Medium" as any), label: 'Medium', coloer: '' }, createdAt: new Date(), tags: [] },
-        { id: 2, text: 'Test todo 2', completed: true, category: 'Work', priority: { value: ("Medium" as any), label: 'Medium', coloer: '' }, createdAt: new Date(), tags: [] }
+        { id: 1, text: 'Test todo 1', completed: false, category: 'Work', priority: { value: ("Medium" as any), label: 'Medium', color: '' }, createdAt: new Date(), tags: [] },
+        { id: 2, text: 'Test todo 2', completed: true, category: 'Work', priority: { value: ("Medium" as any), label: 'Medium', color: '' }, createdAt: new Date(), tags: [] }
       ];
       localStorage.setItem('todos', JSON.stringify(mockTodos));
 

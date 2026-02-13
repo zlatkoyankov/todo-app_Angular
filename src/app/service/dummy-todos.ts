@@ -13,7 +13,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.HIGH,
       label: 'High',
-      coloer: 'bg-red-200 text-red-800'
+      color: 'bg-red-200 text-red-800'
     },
     dueDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     tags: ['angular', 'urgent', 'refactor']
@@ -25,7 +25,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.MEDIUM,
       label: 'Medium',
-      coloer: 'bg-yellow-200 text-yellow-800'
+      color: 'bg-yellow-200 text-yellow-800'
     },
     dueDate: undefined,
     tags: ['shopping', 'groceries']
@@ -37,7 +37,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.MEDIUM,
       label: 'Medium',
-      coloer: 'bg-yellow-200 text-yellow-800'
+      color: 'bg-yellow-200 text-yellow-800'
     },
     dueDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     tags: ['code-review', 'work']
@@ -49,7 +49,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.MEDIUM,
       label: 'Medium',
-      coloer: 'bg-yellow-200 text-yellow-800'
+      color: 'bg-yellow-200 text-yellow-800'
     },
     dueDate: undefined,
     tags: ['exercise', 'health']
@@ -61,7 +61,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.HIGH,
       label: 'High',
-      coloer: 'bg-red-200 text-red-800'
+      color: 'bg-red-200 text-red-800'
     },
     dueDate: new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000),
     tags: ['typescript', 'learning', 'generics']
@@ -73,7 +73,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.LOW,
       label: 'Low',
-      coloer: 'bg-gray-200 text-gray-800'
+      color: 'bg-gray-200 text-gray-800'
     },
     dueDate: undefined,
     tags: ['personal', 'family']
@@ -85,7 +85,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.HIGH,
       label: 'High',
-      coloer: 'bg-red-200 text-red-800'
+      color: 'bg-red-200 text-red-800'
     },
     dueDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000),
     tags: ['testing', 'work', 'unit-tests']
@@ -97,7 +97,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.MEDIUM,
       label: 'Medium',
-      coloer: 'bg-yellow-200 text-yellow-800'
+      color: 'bg-yellow-200 text-yellow-800'
     },
     dueDate: undefined,
     tags: ['documentation', 'work']
@@ -109,7 +109,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.LOW,
       label: 'Low',
-      coloer: 'bg-gray-200 text-gray-800'
+      color: 'bg-gray-200 text-gray-800'
     },
     dueDate: undefined,
     tags: ['shopping', 'sports']
@@ -121,7 +121,7 @@ export const DUMMY_TODOS: Omit<TodoItem, 'id' | 'createdAt'>[] = [
     priority: {
       value: PriorityLabel.MEDIUM,
       label: 'Medium',
-      coloer: 'bg-yellow-200 text-yellow-800'
+      color: 'bg-yellow-200 text-yellow-800'
     },
     dueDate: undefined,
     tags: ['angular', 'security', 'learning']

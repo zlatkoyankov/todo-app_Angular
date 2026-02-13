@@ -286,7 +286,7 @@ export class TodoComponent {
 
     const text = this.newTodoText().trim();
     const defaultCategory = this.categories()[0]?.name || 'Work';
-    const defaultPriority = this.priorities()[1] || this.priorities()[0] || { value: 'Medium', label: 'Medium', coloer: '' };
+    const defaultPriority = this.priorities()[1] || this.priorities()[0] || { value: 'Medium', label: 'Medium', color: '' };
 
     this.todoService.addTodo({
       text,
@@ -391,6 +391,6 @@ export class TodoComponent {
 
   getPriorityColor(priorityValue: string | undefined): string {
     if (!priorityValue) return '';
-    return this.priorities().find(p => p.value === priorityValue)?.coloer || '';
+    return this.priorities().find(p => p.value === priorityValue)?.color || '';
   }
 }

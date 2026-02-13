@@ -24,9 +24,9 @@ export class TodoService {
   ];
 
   private prioorities: Priority[] = [
-    { value: PriorityLabel.LOW, label: 'Low', coloer: 'bg-gray-200 text-gray-800' },
-    { value: PriorityLabel.MEDIUM, label: 'Medium', coloer: 'bg-yellow-200 text-yellow-800' },
-    { value: PriorityLabel.HIGH, label: 'High', coloer: 'bg-red-200 text-red-800' }
+    { value: PriorityLabel.LOW, label: 'Low', color: 'bg-gray-200 text-gray-800' },
+    { value: PriorityLabel.MEDIUM, label: 'Medium', color: 'bg-yellow-200 text-yellow-800' },
+    { value: PriorityLabel.HIGH, label: 'High', color: 'bg-red-200 text-red-800' }
   ];
 
   constructor() {

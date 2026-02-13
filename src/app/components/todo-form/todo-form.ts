@@ -7,7 +7,6 @@ import { Priority } from '../../models/priority.model';
 
 @Component({
   selector: 'app-todo-form',
-  standalone: true,
   imports: [ReactiveFormsModule],
   template: `
   <div class="space-y-4">
@@ -145,7 +144,6 @@ export class TodoForm {
 
     effect(() => {
       const todo = this.editingTodo();
-      console.log('Editing todo:', todo);
       if (!todo) {
           this.isEditing = false;
           this.form.get('text')?.enable();

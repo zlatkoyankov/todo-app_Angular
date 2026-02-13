@@ -16,7 +16,7 @@ describe('TodoForm', () => {
     text: 'Test todo',
     completed: false,
     category: 'Work',
-    priority: { value: PriorityLabel.MEDIUM, label: 'Medium', coloer: 'yellow' },
+    priority: { value: PriorityLabel.MEDIUM, label: 'Medium', color: 'yellow' },
     createdAt: new Date(),
     tags: ['angular', 'test'],
     dueDate: new Date('2026-03-01')

@@ -1,7 +1,7 @@
 export interface Priority {
     value: PriorityLabel;
     label: string;
-    coloer: string;
+    color: string;
 }
 
 export enum PriorityLabel {
