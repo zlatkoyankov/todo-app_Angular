@@ -51,16 +51,15 @@ export class TodoService {
           : this.prioorities[1] // Default to MEDIUM priority
       }));
       this.todos.set(validTodos);
-    } else if (!isTestEnv) {
-      // Initialize with dummy data for development (skip during tests)
-      const dummyTodos: TodoItem[] = DUMMY_TODOS.map((dummy, index) => ({
-        ...dummy,
-        id: Date.now() + index,
-        createdAt: new Date()
-      }));
-      this.todos.set(dummyTodos);
     } else {
-      // Test environment: start with empty list for deterministic tests
+      // Start with empty list - no dummy data by default
+      // Uncomment line below to load dummy todos for development
+      // const dummyTodos: TodoItem[] = DUMMY_TODOS.map((dummy, index) => ({
+      //   ...dummy,
+      //   id: Date.now() + index,
+      //   createdAt: new Date()
+      // }));
+      // this.todos.set(dummyTodos);
       this.todos.set([]);
     }
   }
