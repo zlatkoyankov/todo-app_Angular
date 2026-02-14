@@ -239,6 +239,9 @@ export class TodoComponent {
   totalTodosCount = computed(() => this.todos().length);
 
   constructor() {
+    // Reload todos for current user (handles both guest and authenticated users)
+    this.todoService.reloadTodos();
+
     // Load categories and priorities synchronously from service signals
     this.categories.set(this.todoService.getCategories()());
     this.priorities.set(this.todoService.getPriorities()());

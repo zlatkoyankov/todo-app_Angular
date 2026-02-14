@@ -1,13 +1,15 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { TodoItem } from '../models/todo.model';
 import { Category } from '../models/category.model';
 import { Priority, PriorityLabel } from '../models/priority.model';
 import { DUMMY_TODOS } from './dummy-todos';
+import { AuthService } from './auth';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TodoService {
+  private authService = inject(AuthService);
   private todos = signal<TodoItem[]>([]);
   
   private categoriesSignal = signal<Category[]>([]);
@@ -36,9 +38,20 @@ export class TodoService {
     this.loadTodos(isTestEnv);
     this.categoriesSignal.set(this.categories);
     this.prioritiesSignal.set(this.prioorities);
+
+    // Watch for authentication changes and reload todos
+    // Note: Using effect would be better but requires computed context
+    // For now, components should call reloadTodos() after login/logout
   }
+
+  private getStorageKey(): string {
+    const user = this.authService.currentUser();
+    return user ? `todos_${user.id}` : 'todos';
+  }
+
   private loadTodos(isTestEnv = false): void {
-    const storeTodos = localStorage.getItem('todos');
+    const storageKey = this.getStorageKey();
+    const storeTodos = localStorage.getItem(storageKey);
     if (storeTodos) {
       const todos = JSON.parse(storeTodos);
       // Ensure all todos have valid priority objects
@@ -65,7 +78,15 @@ export class TodoService {
   }
 
   private saveTodos(): void {
-    localStorage.setItem('todos', JSON.stringify(this.todos()));
+    const storageKey = this.getStorageKey();
+    localStorage.setItem(storageKey, JSON.stringify(this.todos()));
+  }
+
+  // Call this method after login/logout to reload todos for the current user
+  reloadTodos(): void {
+    const proc: any = (globalThis as any).process;
+    const isTestEnv = proc && (proc.env?.NODE_ENV === 'test' || proc.env?.VITEST === 'true');
+    this.loadTodos(isTestEnv);
   }
 
   getTodos() {
