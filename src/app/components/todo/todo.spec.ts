@@ -1,8 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import {HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal, computed } from '@angular/core';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TodoComponent } from './todo';
 import { TodoCategory } from '../todo-category/todo-category';
 import { TodoPriority } from '../todo-priority/todo-priority';
 import { TodoService } from '../../service/todo';
+import { AuthService } from '../../service/auth';
 import { FormsModule } from '@angular/forms';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
@@ -10,6 +15,7 @@ describe('TodoComponent', () => {
   let component: TodoComponent;
   let fixture: ComponentFixture<TodoComponent>;
   let todoService: TodoService;
+  let httpMock: HttpTestingController;
   const make = (text: string) => ({ text, completed: false, category: 'Work', priority: todoService.getPriorities()()[1] || todoService.getPriorities()()[0], tags: [] });
 
   beforeEach(async () => {
@@ -17,18 +23,33 @@ describe('TodoComponent', () => {
     localStorage.clear();
     (globalThis as any).process = { env: { VITEST: 'true' } };
 
+    // Create mock auth service for guest mode
+    const currentUserSignal = signal<any>(null);
+    const authServiceMock = {
+      currentUser: currentUserSignal.asReadonly(),
+      isAuthenticated: computed(() => currentUserSignal() !== null)
+    };
+
     await TestBed.configureTestingModule({
-      imports: [TodoComponent, TodoCategory, TodoPriority, FormsModule],
-      providers: [TodoService]
+      imports: [TodoComponent, FormsModule],
+      providers: [
+        TodoService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authServiceMock }
+      ],
+      schemas: [NO_ERRORS_SCHEMA]
     }).compileComponents();
 
     fixture = TestBed.createComponent(TodoComponent);
     component = fixture.componentInstance;
     todoService = TestBed.inject(TodoService);
+    httpMock = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
   });
 
   afterEach(() => {
+    httpMock.verify();
     localStorage.clear();
   });
 
@@ -442,7 +463,7 @@ describe('TodoComponent', () => {
       component.newTodoText.set('Persistent todo');
       component.addTodo();
 
-      const stored = localStorage.getItem('todos');
+      const stored = localStorage.getItem('todos_guest');
       expect(stored).toBeTruthy();
       if (stored) {
         const parsed = JSON.parse(stored);

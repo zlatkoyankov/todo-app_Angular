@@ -1,6 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal, computed } from '@angular/core';
 import { TodoCategory } from './todo-category';
 import { TodoService } from '../../service/todo';
+import { AuthService } from '../../service/auth';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { By } from '@angular/platform-browser';
 
@@ -8,24 +12,38 @@ describe('TodoCategory', () => {
   let fixture: ComponentFixture<TodoCategory>;
   let component: TodoCategory;
   let todoService: TodoService;
+  let httpMock: HttpTestingController;
 
   beforeEach(async () => {
     // deterministic test environment
     localStorage.clear();
     (globalThis as any).process = { env: { VITEST: 'true' } };
 
+    const currentUserSignal = signal<any>(null);
+    const authServiceMock = {
+      currentUser: currentUserSignal.asReadonly(),
+      isAuthenticated: computed(() => currentUserSignal() !== null)
+    };
+
     await TestBed.configureTestingModule({
       imports: [TodoCategory],
-      providers: [TodoService]
+      providers: [
+        TodoService,
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authServiceMock }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(TodoCategory);
     component = fixture.componentInstance;
     todoService = TestBed.inject(TodoService);
+    httpMock = TestBed.inject(HttpTestingController);
     fixture.detectChanges();
   });
 
   afterEach(() => {
+    httpMock.verify();
     localStorage.clear();
   });
 

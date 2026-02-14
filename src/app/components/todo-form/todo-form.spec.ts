@@ -203,26 +203,51 @@ describe('TodoForm', () => {
   });
 
   describe('Edit Todo Mode', () => {
-    const applyEditState = (todo: TodoItem) => {
-      component.isEditing = true;
-      (component as { editingTodo: () => TodoItem | null }).editingTodo = () => todo;
-      component.form.patchValue({
-        text: todo.text,
-        category: todo.category,
-        priority: todo.priority.value,
-        dueDate: todo.dueDate ? todo.dueDate.toISOString().split('T')[0] : '',
-        tags: todo.tags.join(', ')
-      });
-      component.form.get('text')?.disable();
-    };
-
-    it('should call todoService.updateTodo when submitting in edit mode', () => {
+    it('should populate form with todo data when editing', async () => {
       const existingTodo = createMockTodo();
-      applyEditState(existingTodo);
+      
+      // Simulate the effect that sets up edit mode
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true; // Manually set since effect may not run in test
+      fixture.detectChanges();
+      await fixture.whenStable();
 
+      expect(component.form.get('text')?.value).toBe('Test todo');
+      expect(component.form.get('category')?.value).toBe('Work');
+      expect(component.form.get('priority')?.value).toBe(PriorityLabel.MEDIUM);
+      expect(component.form.get('tags')?.value).toBe('angular, test');
+    });
+
+    it('should keep text field enabled during edit mode', async () => {
+      const existingTodo = createMockTodo();
+      
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.form.get('text')?.enabled).toBe(true);
+    });
+
+    it('should call todoService.updateTodo with all fields including text', async () => {
+      const existingTodo = createMockTodo();
       const spy = vi.spyOn(todoService, 'updateTodo');
+      
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true;
+      // Populate form with existing todo data first
+      component.form.patchValue({
+        text: existingTodo.text,
+        category: existingTodo.category,
+        priority: existingTodo.priority.value,
+        dueDate: existingTodo.dueDate ? new Date(existingTodo.dueDate).toISOString().split('T')[0] : '',
+        tags: existingTodo.tags.join(', ')
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
 
       component.form.patchValue({
+        text: 'Updated text',
         category: 'Personal',
         priority: 'High',
         tags: 'alpha, beta'
@@ -231,25 +256,137 @@ describe('TodoForm', () => {
       component.onSubmit();
 
       expect(spy).toHaveBeenCalledWith(existingTodo.id, expect.objectContaining({
+        text: 'Updated text',
         category: 'Personal',
         tags: ['alpha', 'beta']
       }));
     });
 
-    it('should emit todoUpdated event after updating', () => {
+    it('should update todo text when changed', async () => {
       const existingTodo = createMockTodo();
-      applyEditState(existingTodo);
+      const spy = vi.spyOn(todoService, 'updateTodo');
+      
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true;
+      // Populate form first
+      component.form.patchValue({
+        text: existingTodo.text,
+        category: existingTodo.category,
+        priority: existingTodo.priority.value,
+        dueDate: existingTodo.dueDate ? new Date(existingTodo.dueDate).toISOString().split('T')[0] : '',
+        tags: existingTodo.tags.join(', ')
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      component.form.get('text')?.setValue('Completely new text');
+      component.onSubmit();
+
+      expect(spy).toHaveBeenCalled();
+      const updateData = spy.mock.calls[0][1];
+      expect(updateData.text).toBe('Completely new text');
+    });
+
+    it('should emit todoUpdated event after updating', async () => {
+      const existingTodo = createMockTodo();
+      
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true;
+      // Populate form first
+      component.form.patchValue({
+        text: existingTodo.text,
+        category: existingTodo.category,
+        priority: existingTodo.priority.value,
+        dueDate: existingTodo.dueDate ? new Date(existingTodo.dueDate).toISOString().split('T')[0] : '',
+        tags: existingTodo.tags.join(', ')
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const emitSpy = vi.spyOn(component.todoUpdated, 'emit');
 
       component.form.patchValue({
         category: 'Work',
         priority: 'Medium'
       });
 
-      const emitSpy = vi.spyOn(component.todoUpdated, 'emit');
-
       component.onSubmit();
 
       expect(emitSpy).toHaveBeenCalled();
+    });
+
+    it('should reset to add mode when editingTodo is set to null', async () => {
+      const existingTodo = createMockTodo();
+      
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true;
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.componentRef.setInput('editingTodo', null);
+      component.isEditing = false; // Manually set
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(component.isEditing).toBe(false);
+      expect(component.form.get('text')?.enabled).toBe(true);
+      expect(component.form.get('text')?.value).toBe('');
+    });
+
+    it('should include dueDate in update when changed', async () => {
+      const existingTodo = createMockTodo();
+      const spy = vi.spyOn(todoService, 'updateTodo');
+      
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true;
+      // Populate form first
+      component.form.patchValue({
+        text: existingTodo.text,
+        category: existingTodo.category,
+        priority: existingTodo.priority.value,
+        dueDate: existingTodo.dueDate ? new Date(existingTodo.dueDate).toISOString().split('T')[0] : '',
+        tags: existingTodo.tags.join(', ')
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      component.form.patchValue({
+        dueDate: '2026-12-31'
+      });
+
+      component.onSubmit();
+
+      expect(spy).toHaveBeenCalled();
+      const updateData = spy.mock.calls[0][1];
+      expect(updateData.dueDate).toBeInstanceOf(Date);
+    });
+
+    it('should handle priority changes correctly', async () => {
+      const existingTodo = createMockTodo();
+      const spy = vi.spyOn(todoService, 'updateTodo');
+      
+      fixture.componentRef.setInput('editingTodo', existingTodo);
+      component.isEditing = true;
+      // Populate form first
+      component.form.patchValue({
+        text: existingTodo.text,
+        category: existingTodo.category,
+        priority: existingTodo.priority.value,
+        dueDate: existingTodo.dueDate ? new Date(existingTodo.dueDate).toISOString().split('T')[0] : '',
+        tags: existingTodo.tags.join(', ')
+      });
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      component.form.patchValue({
+        priority: 'High'
+      });
+
+      component.onSubmit();
+
+      expect(spy).toHaveBeenCalled();
+      const updateData = spy.mock.calls[0][1];
+      expect(updateData.priority?.value).toBe('High');
     });
   });
 

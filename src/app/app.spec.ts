@@ -1,17 +1,31 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { App } from './app';
-import { TodoComponent } from './components/todo/todo';
-import { TodoCategory } from './components/todo-category/todo-category';
-import { TodoPriority } from './components/todo-priority/todo-priority';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { HeaderComponent } from './components/header/header';
+import { AuthService } from './service/auth';
+import { signal, computed } from '@angular/core';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('App Component', () => {
   let component: App;
   let fixture: ComponentFixture<App>;
 
   beforeEach(async () => {
+    (globalThis as any).process = { env: { VITEST: 'true' } };
+
+    const currentUserSignal = signal<any>(null);
+    const authServiceMock = {
+      currentUser: currentUserSignal.asReadonly(),
+      isAuthenticated: computed(() => currentUserSignal() !== null),
+      logout: vi.fn()
+    };
+
     await TestBed.configureTestingModule({
-      imports: [App, TodoComponent, TodoCategory, TodoPriority]
+      imports: [App, HeaderComponent],
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: authServiceMock }
+      ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(App);
@@ -28,13 +42,24 @@ describe('App Component', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should render TodoComponent', () => {
+  it('should render HeaderComponent', () => {
     const compiled = fixture.nativeElement;
-    const todoComponent = compiled.querySelector('app-todo');
-    expect(todoComponent).toBeTruthy();
+    const headerComponent = compiled.querySelector('app-header');
+    expect(headerComponent).toBeTruthy();
   });
 
-  it('should have the correct selector', () => {
-    expect(fixture.componentInstance).toBeTruthy();
+  it('should render RouterOutlet for navigation', () => {
+    const compiled = fixture.nativeElement;
+    const routerOutlet = compiled.querySelector('router-outlet');
+    expect(routerOutlet).toBeTruthy();
+  });
+
+  it('should have the correct structure with header and outlet', () => {
+    const compiled = fixture.nativeElement;
+    const header = compiled.querySelector('app-header');
+    const outlet = compiled.querySelector('router-outlet');
+    
+    expect(header).toBeTruthy();
+    expect(outlet).toBeTruthy();
   });
 });
