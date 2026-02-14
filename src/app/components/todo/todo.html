@@ -1,19 +1,19 @@
 <div class="max-w-4xl mx-auto p-4">
-  <h1 class="text-3xl font-bold text-center text-gray-800 mb-8">Advanced Angular Todo App</h1>
+  <h1 class="text-xl sm:text-2xl md:text-3xl font-bold text-center text-gray-800 mb-3 md:mb-8">Todo App</h1>
   
-  <!-- Stats Overview -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-    <div class="bg-white rounded-lg shadow-md p-4 text-center">
-      <div class="text-2xl font-bold text-blue-600">{{ totalTodosCount() }}</div>
-      <div class="text-gray-600">Total Tasks</div>
+  <!-- Stats Overview - Minimal on mobile, expanded on desktop -->
+  <div class="flex gap-1.5 sm:gap-2 md:gap-4 mb-4 md:mb-6">
+    <div class="flex-1 bg-white rounded shadow sm:shadow-md p-1.5 sm:p-3 md:p-4 text-center">
+      <div class="text-base sm:text-xl md:text-2xl font-bold text-blue-600">{{ totalTodosCount() }}</div>
+      <div class="text-[10px] sm:text-xs md:text-base text-gray-600">Total</div>
     </div>
-    <div class="bg-white rounded-lg shadow-md p-4 text-center">
-      <div class="text-2xl font-bold text-green-600">{{ activeTodosCount() }}</div>
-      <div class="text-gray-600">Active Tasks</div>
+    <div class="flex-1 bg-white rounded shadow sm:shadow-md p-1.5 sm:p-3 md:p-4 text-center">
+      <div class="text-base sm:text-xl md:text-2xl font-bold text-green-600">{{ activeTodosCount() }}</div>
+      <div class="text-[10px] sm:text-xs md:text-base text-gray-600">Active</div>
     </div>
-    <div class="bg-white rounded-lg shadow-md p-4 text-center">
-      <div class="text-2xl font-bold text-purple-600">{{ completedTodosCount() }}</div>
-      <div class="text-gray-600">Completed</div>
+    <div class="flex-1 bg-white rounded shadow sm:shadow-md p-1.5 sm:p-3 md:p-4 text-center">
+      <div class="text-base sm:text-xl md:text-2xl font-bold text-purple-600">{{ completedTodosCount() }}</div>
+      <div class="text-[10px] sm:text-xs md:text-base text-gray-600">Done</div>
     </div>
   </div>
 

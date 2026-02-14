@@ -15,7 +15,7 @@ export class HeaderComponent {
   protected currentUser = this.authService.currentUser;
   protected isAuthenticated = this.authService.isAuthenticated;
 
-  protected onLogout(): void {
-    this.authService.logout();
+  protected async onLogout(): Promise<void> {
+    await this.authService.logout();
   }
 }

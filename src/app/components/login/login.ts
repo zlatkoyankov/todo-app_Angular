@@ -18,11 +18,11 @@ export class LoginComponent {
   protected isLoading = signal<boolean>(false);
 
   protected loginForm = new FormGroup({
-    email: new FormControl('', [Validators.required, Validators.email]),
+    username: new FormControl('', [Validators.required, Validators.minLength(3)]),
     password: new FormControl('', [Validators.required, Validators.minLength(6)]),
   });
 
-  protected onSubmit(): void {
+  protected async onSubmit(): Promise<void> {
     if (this.loginForm.invalid) {
       this.loginForm.markAllAsTouched();
       return;
@@ -32,11 +32,11 @@ export class LoginComponent {
     this.errorMessage.set('');
 
     const credentials: UserCredentials = {
-      email: this.loginForm.value.email!,
+      username: this.loginForm.value.username!,
       password: this.loginForm.value.password!,
     };
 
-    const result = this.authService.login(credentials);
+    const result = await this.authService.login(credentials);
 
     if (result.success) {
       this.router.navigate(['/todos']);
@@ -46,13 +46,13 @@ export class LoginComponent {
     }
   }
 
-  protected getEmailError(): string {
-    const emailControl = this.loginForm.get('email');
-    if (emailControl?.hasError('required')) {
-      return 'Email is required';
+  protected getUsernameError(): string {
+    const usernameControl = this.loginForm.get('username');
+    if (usernameControl?.hasError('required')) {
+      return 'Username is required';
     }
-    if (emailControl?.hasError('email')) {
-      return 'Please enter a valid email';
+    if (usernameControl?.hasError('minlength')) {
+      return 'Username must be at least 3 characters';
     }
     return '';
   }

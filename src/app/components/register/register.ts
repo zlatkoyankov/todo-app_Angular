@@ -18,13 +18,12 @@ export class RegisterComponent {
   protected isLoading = signal<boolean>(false);
 
   protected registerForm = new FormGroup({
-    name: new FormControl('', [Validators.required, Validators.minLength(2)]),
-    email: new FormControl('', [Validators.required, Validators.email]),
+    username: new FormControl('', [Validators.required, Validators.minLength(3)]),
     password: new FormControl('', [Validators.required, Validators.minLength(6)]),
     confirmPassword: new FormControl('', [Validators.required]),
   });
 
-  protected onSubmit(): void {
+  protected async onSubmit(): Promise<void> {
     if (this.registerForm.invalid) {
       this.registerForm.markAllAsTouched();
       return;
@@ -34,13 +33,12 @@ export class RegisterComponent {
     this.errorMessage.set('');
 
     const registration: UserRegistration = {
-      name: this.registerForm.value.name!,
-      email: this.registerForm.value.email!,
+      username: this.registerForm.value.username!,
       password: this.registerForm.value.password!,
       confirmPassword: this.registerForm.value.confirmPassword!,
     };
 
-    const result = this.authService.register(registration);
+    const result = await this.authService.register(registration);
 
     if (result.success) {
       this.router.navigate(['/todos']);
@@ -50,24 +48,13 @@ export class RegisterComponent {
     }
   }
 
-  protected getNameError(): string {
-    const nameControl = this.registerForm.get('name');
-    if (nameControl?.hasError('required')) {
-      return 'Name is required';
+  protected getUsernameError(): string {
+    const usernameControl = this.registerForm.get('username');
+    if (usernameControl?.hasError('required')) {
+      return 'Username is required';
     }
-    if (nameControl?.hasError('minlength')) {
-      return 'Name must be at least 2 characters';
-    }
-    return '';
-  }
-
-  protected getEmailError(): string {
-    const emailControl = this.registerForm.get('email');
-    if (emailControl?.hasError('required')) {
-      return 'Email is required';
-    }
-    if (emailControl?.hasError('email')) {
-      return 'Please enter a valid email';
+    if (usernameControl?.hasError('minlength')) {
+      return 'Username must be at least 3 characters';
     }
     return '';
   }

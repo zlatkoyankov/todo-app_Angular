@@ -1,23 +1,22 @@
 export interface User {
   id: string;
-  email: string;
-  name: string;
-  createdAt: Date;
+  username: string;
+  name?: string;
 }
 
 export interface UserCredentials {
-  email: string;
+  username: string;
   password: string;
 }
 
-export interface UserRegistration extends UserCredentials {
-  name: string;
+export interface UserRegistration {
+  username: string;
+  password: string;
   confirmPassword: string;
 }
 
 export interface UserUpdate {
-  name?: string;
-  email?: string;
+  username?: string;
 }
 
 export interface PasswordChange {
@@ -26,6 +25,19 @@ export interface PasswordChange {
   confirmPassword: string;
 }
 
-export interface StoredUser extends User {
-  passwordHash: string;
+export interface AuthResponse {
+  token: string;
+  user: User;
+}
+
+export interface LoginResponse {
+  message: string;
+  token: string;
+  user: User;
+}
+
+export interface RegisterResponse {
+  message: string;
+  token: string;
+  user: User;
 }

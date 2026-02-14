@@ -21,8 +21,7 @@ export class AccountComponent {
   protected showDeleteConfirm = signal<boolean>(false);
 
   protected accountForm = new FormGroup({
-    name: new FormControl('', [Validators.required, Validators.minLength(2)]),
-    email: new FormControl('', [Validators.required, Validators.email]),
+    username: new FormControl('', [Validators.required, Validators.minLength(3)]),
   });
 
   protected passwordForm = new FormGroup({
@@ -35,8 +34,7 @@ export class AccountComponent {
     const user = this.currentUser();
     if (user) {
       this.accountForm.patchValue({
-        name: user.name,
-        email: user.email,
+        username: user.username,
       });
     }
   }
@@ -52,8 +50,7 @@ export class AccountComponent {
     this.successMessage.set('');
 
     const update: UserUpdate = {
-      name: this.accountForm.value.name!,
-      email: this.accountForm.value.email!,
+      username: this.accountForm.value.username!,
     };
 
     const result = this.authService.updateAccount(update);
@@ -118,24 +115,13 @@ export class AccountComponent {
     }
   }
 
-  protected getNameError(): string {
-    const nameControl = this.accountForm.get('name');
-    if (nameControl?.hasError('required')) {
-      return 'Name is required';
+  protected getUsernameError(): string {
+    const usernameControl = this.accountForm.get('username');
+    if (usernameControl?.hasError('required')) {
+      return 'Username is required';
     }
-    if (nameControl?.hasError('minlength')) {
-      return 'Name must be at least 2 characters';
-    }
-    return '';
-  }
-
-  protected getEmailError(): string {
-    const emailControl = this.accountForm.get('email');
-    if (emailControl?.hasError('required')) {
-      return 'Email is required';
-    }
-    if (emailControl?.hasError('email')) {
-      return 'Please enter a valid email';
+    if (usernameControl?.hasError('minlength')) {
+      return 'Username must be at least 3 characters';
     }
     return '';
   }

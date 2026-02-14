@@ -147,18 +147,20 @@ export class TodoForm {
       if (!todo) {
           this.isEditing = false;
           this.form.get('text')?.enable();
+          this.form.reset({ category: 'Work', priority: 'Medium' });
           return;
         }
 
       this.isEditing = true;
       this.form.patchValue({
         text: todo.text,
-        category: todo.category,
-        priority: todo.priority.value,
-        dueDate: todo.dueDate ? todo.dueDate.toISOString().split('T')[0] : '',
-        tags: todo.tags.join(', ')
+        category: todo.category || 'Work',
+        priority: todo.priority?.value || 'Medium',
+        dueDate: todo.dueDate ? new Date(todo.dueDate).toISOString().split('T')[0] : '',
+        tags: todo.tags?.join(', ') || ''
       });
-      this.form.get('text')?.disable();
+      // Keep text enabled for editing
+      this.form.get('text')?.enable();
 
     });
   } 
@@ -171,22 +173,26 @@ export class TodoForm {
     const formValue = this.form.getRawValue();
     const tags = formValue.tags.split(',').map(tag => tag.trim()).filter(tag => tag);
     const priorityValue = formValue.priority;
+    const selectedPriority = this.priority().find(p => p.value === priorityValue) || this.priority()[0];
 
     const todo = this.editingTodo();
     if (this.isEditing && todo) {
+      // Update existing todo - include all editable fields
       const updateTodoData: Partial<TodoItem> = {
+        text: formValue.text.trim(),
         category: formValue.category,
-        priority: this.priority().find(p => p.value === priorityValue) || this.priority()[0],
+        priority: selectedPriority,
         dueDate: formValue.dueDate ? new Date(formValue.dueDate) : undefined,
         tags
       };
       this.todoService.updateTodo(todo.id, updateTodoData);
       this.todoUpdated.emit();
     } else {
+      // Add new todo
       this.todoService.addTodo({
         text: formValue.text.trim(),
         category: formValue.category,
-        priority: this.priority().find(p => p.value === priorityValue) || this.priority()[0],
+        priority: selectedPriority,
         dueDate: formValue.dueDate ? new Date(formValue.dueDate) : undefined,
         tags,
         completed: false

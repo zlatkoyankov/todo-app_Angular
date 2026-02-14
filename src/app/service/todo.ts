@@ -1,17 +1,20 @@
 import { Injectable, signal, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { catchError, tap, of } from 'rxjs';
 import { TodoItem } from '../models/todo.model';
 import { Category } from '../models/category.model';
 import { Priority, PriorityLabel } from '../models/priority.model';
-import { DUMMY_TODOS } from './dummy-todos';
 import { AuthService } from './auth';
 
 @Injectable({
   providedIn: 'root',
 })
 export class TodoService {
+  private readonly API_URL = '/api';
+  private http = inject(HttpClient);
   private authService = inject(AuthService);
-  private todos = signal<TodoItem[]>([]);
   
+  private todos = signal<TodoItem[]>([]);
   private categoriesSignal = signal<Category[]>([]);
   private prioritiesSignal = signal<Priority[]>([]);
 
@@ -32,61 +35,76 @@ export class TodoService {
   ];
 
   constructor() {
-    // In test environment prefer an empty initial store to keep tests deterministic
-    const proc: any = (globalThis as any).process;
-    const isTestEnv = proc && (proc.env?.NODE_ENV === 'test' || proc.env?.VITEST === 'true');
-    this.loadTodos(isTestEnv);
     this.categoriesSignal.set(this.categories);
     this.prioritiesSignal.set(this.prioorities);
-
-    // Watch for authentication changes and reload todos
-    // Note: Using effect would be better but requires computed context
-    // For now, components should call reloadTodos() after login/logout
+    // Don't load todos automatically - let components call reloadTodos() when needed
   }
 
-  private getStorageKey(): string {
-    const user = this.authService.currentUser();
-    return user ? `todos_${user.id}` : 'todos';
+  private isAuthenticated(): boolean {
+    return this.authService.isAuthenticated();
   }
 
-  private loadTodos(isTestEnv = false): void {
-    const storageKey = this.getStorageKey();
-    const storeTodos = localStorage.getItem(storageKey);
+  private loadTodos(): void {
+    if (this.isAuthenticated()) {
+      // Load from API
+      this.loadTodosFromAPI();
+    } else {
+      // Load from localStorage for guest mode
+      this.loadTodosFromLocalStorage();
+    }
+  }
+
+  private loadTodosFromAPI(): void {
+    this.http.get<any[]>(`${this.API_URL}/todos`)
+      .pipe(
+        tap((todos:any) => {
+          // Transform backend format to frontend TodoItem format
+          const validTodos = todos.todos.map((todo: any) => ({
+            id: todo.id,
+            text: todo.text, // Backend uses 'task', frontend uses 'text'
+            completed: todo.completed,
+            category: todo.category || '1', // Default category if not present
+            priority: todo.priority || this.prioorities[1], // Default priority
+            tags: todo.tags || [],
+            createdAt: todo.createdAt ? new Date(todo.createdAt) : new Date(),
+            dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
+          }));
+          
+          this.todos.set(validTodos);
+        }),
+        catchError(() => {
+          console.error('Failed to load todos from API');
+          this.todos.set([]);
+          return of([]);
+        })
+      )
+      .subscribe();
+  }
+
+  private loadTodosFromLocalStorage(): void {
+    const storeTodos = localStorage.getItem('todos_guest');
     if (storeTodos) {
       const todos = JSON.parse(storeTodos);
-      // Ensure all todos have valid priority objects
       const validTodos = todos.map((todo: any) => ({
         ...todo,
         createdAt: new Date(todo.createdAt),
         dueDate: todo.dueDate ? new Date(todo.dueDate) : undefined,
         priority: todo.priority && typeof todo.priority === 'object'
           ? todo.priority
-          : this.prioorities[1] // Default to MEDIUM priority
+          : this.prioorities[1]
       }));
       this.todos.set(validTodos);
     } else {
-      // Start with empty list - no dummy data by default
-      // Uncomment line below to load dummy todos for development
-      // const dummyTodos: TodoItem[] = DUMMY_TODOS.map((dummy, index) => ({
-      //   ...dummy,
-      //   id: Date.now() + index,
-      //   createdAt: new Date()
-      // }));
-      // this.todos.set(dummyTodos);
       this.todos.set([]);
     }
   }
 
-  private saveTodos(): void {
-    const storageKey = this.getStorageKey();
-    localStorage.setItem(storageKey, JSON.stringify(this.todos()));
+  private saveTodosToLocalStorage(): void {
+    localStorage.setItem('todos_guest', JSON.stringify(this.todos()));
   }
 
-  // Call this method after login/logout to reload todos for the current user
   reloadTodos(): void {
-    const proc: any = (globalThis as any).process;
-    const isTestEnv = proc && (proc.env?.NODE_ENV === 'test' || proc.env?.VITEST === 'true');
-    this.loadTodos(isTestEnv);
+    this.loadTodos();
   }
 
   getTodos() {
@@ -102,41 +120,127 @@ export class TodoService {
   }
 
   addTodo(todo: Omit<TodoItem, 'id' | 'createdAt'>): void {
-    // Ensure generated ids are unique even when calls occur within the same millisecond
-    const id = Date.now() + (++this.idCounter);
-    const newTodo: TodoItem = {
-      ...todo,
-      id,
-      createdAt: new Date(),
-    };
-    this.todos.update(todos => [...todos, newTodo]);
-    this.saveTodos();
+    if (this.isAuthenticated()) {
+      // Add via API - transform to backend format
+      const payload = {
+        task: todo.text,
+        completed: todo.completed || false
+      };
+      
+      this.http.post<any>(`${this.API_URL}/todos`, payload)
+        .pipe(
+          tap((response) => {
+            // Transform backend response to frontend TodoItem
+            const newTodo: TodoItem = {
+              id: response.id,
+              text: response.text,
+              completed: response.completed,
+              category: todo.category,
+              priority: todo.priority,
+              tags: todo.tags || [],
+              createdAt: response.createdAt ? new Date(response.createdAt) : new Date(),
+              dueDate: todo.dueDate,
+            };
+            this.todos.update(todos => [...todos, newTodo]);
+          }),
+          catchError((error) => {
+            console.error('Failed to add todo:', error);
+            return of(null);
+          })
+        )
+        .subscribe();
+    } else {
+      // Add to localStorage for guest mode
+      const id = Date.now() + (++this.idCounter);
+      const newTodo: TodoItem = {
+        ...todo,
+        id,
+        createdAt: new Date(),
+      };
+      this.todos.update(todos => [...todos, newTodo]);
+      this.saveTodosToLocalStorage();
+    }
   }
 
   updateTodo(id: number, updatedFields: Partial<TodoItem>): void {
-    this.todos.update(todos =>
-      todos.map(todo => (todo.id === id ? { ...todo, ...updatedFields, modifiedAt: new Date() } : todo))
-    );
-    this.saveTodos();
+    if (this.isAuthenticated()) {
+    //   // Update via API - transform to backend format
+    //   const payload: any = {};
+    //   if (updatedFields.text !== undefined) {
+    //     payload.text = updatedFields.text;
+    //   }
+    //   if (updatedFields.completed !== undefined) {
+    //     payload.completed = updatedFields.completed;
+    //   }
+      
+      this.http.put<any>(`${this.API_URL}/todos/${id}`, updatedFields)
+        .pipe(
+          tap((response) => {
+            debugger
+            // Update local state with all changed fields (backend + local-only fields)
+            this.todos.update(todos =>
+              todos.map(todo => todo.id === id ? {
+                ...todo,
+                ...updatedFields, // Apply all local updates (category, priority, tags, dueDate)
+                text: response.text !== undefined ? response.text : todo.text, // Override with backend response
+                completed: response.completed !== undefined ? response.completed : todo.completed,
+                modifiedAt: new Date()
+              } : todo)
+            );
+          }),
+          catchError((error) => {
+            console.error('Failed to update todo:', error);
+            return of(null);
+          })
+        )
+        .subscribe();
+    } else {
+      // Update in localStorage for guest mode
+      this.todos.update(todos =>
+        todos.map(todo => (todo.id === id ? { ...todo, ...updatedFields, modifiedAt: new Date() } : todo))
+      );
+      this.saveTodosToLocalStorage();
+    }
   }
 
   toggleTodo(id: number): void {
-    this.todos.update(todos =>
-      todos.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed, modifiedAt: new Date() } : todo
-      )
-    );
-    this.saveTodos();
+    const todo = this.todos().find(t => t.id === id);
+    if (todo) {
+      this.updateTodo(id, { completed: !todo.completed });
+    }
   }
 
   deleteTodo(id: number): void {
-    this.todos.update(todos => todos.filter(t => t.id !== id));
-    this.saveTodos();
+    if (this.isAuthenticated()) {
+      // Delete via API
+      this.http.delete(`${this.API_URL}/todos/${id}`)
+        .pipe(
+          tap(() => {
+            this.todos.update(todos => todos.filter(t => t.id !== id));
+          }),
+          catchError((error) => {
+            console.error('Failed to delete todo:', error);
+            return of(null);
+          })
+        )
+        .subscribe();
+    } else {
+      // Delete from localStorage for guest mode
+      this.todos.update(todos => todos.filter(t => t.id !== id));
+      this.saveTodosToLocalStorage();
+    }
   }
 
   clearCompleted(): void {
-    this.todos.update(todos => todos.filter(t => !t.completed));
-    this.saveTodos();
+    const completedTodos = this.todos().filter(t => t.completed);
+    if (this.isAuthenticated()) {
+      // Delete each completed todo via API
+      completedTodos.forEach(todo => this.deleteTodo(todo.id));
+    } else {
+      // Clear from localStorage for guest mode
+      this.todos.update(todos => todos.filter(t => !t.completed));
+      this.saveTodosToLocalStorage();
+    }
   }
 
   // Filter todo by category
